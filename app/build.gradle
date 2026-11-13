@@ -1,0 +1,40 @@
+plugins { id 'com.android.application' }
+def testApp = 'ca-app-pub-3940256099942544~3347511713'
+def testReward = 'ca-app-pub-3940256099942544/5224354917'
+def productionApp = providers.gradleProperty('ADMOB_APP_ID').orElse(testApp).get()
+def productionReward = providers.gradleProperty('ADMOB_REWARDED_ID').orElse(testReward).get()
+android {
+    namespace 'com.nyangdoku.game'
+    compileSdk 36
+    defaultConfig {
+        applicationId 'com.nyangdoku.game'
+        minSdk 24
+        targetSdk 36
+        versionCode 1
+        versionName '1.0.0'
+    }
+    buildFeatures { buildConfig true }
+    buildTypes {
+        debug {
+            manifestPlaceholders = [admobAppId: testApp]
+            buildConfigField 'String', 'REWARDED_AD_UNIT', '"' + testReward + '"'
+        }
+        release {
+            manifestPlaceholders = [admobAppId: productionApp]
+            buildConfigField 'String', 'REWARDED_AD_UNIT', '"' + productionReward + '"'
+            minifyEnabled false
+        }
+    }
+    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+}
+tasks.register('verifyProductionAds') {
+    doLast {
+        if (productionApp == testApp || productionReward == testReward) throw new GradleException('Release requires -PADMOB_APP_ID and -PADMOB_REWARDED_ID. Debug builds use Google test ads.')
+    }
+}
+tasks.configureEach { if (name == 'preReleaseBuild') dependsOn 'verifyProductionAds' }
+dependencies {
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'com.google.android.gms:play-services-ads:25.1.0'
+    implementation 'com.google.android.ump:user-messaging-platform:4.0.0'
+}
